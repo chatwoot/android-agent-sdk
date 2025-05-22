@@ -38,7 +38,7 @@ allprojects {
 }
 
 dependencies {
-    implementation("com.github.chatwoot:chatwoot-sdk:1.0.0")
+    implementation("com.github.chatwoot:android-agent-sdk:1.0.0")
 }
 ```
 
