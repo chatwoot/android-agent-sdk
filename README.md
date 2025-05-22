@@ -21,7 +21,7 @@ Add the dependency in your app's `build.gradle`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.chatwoot:chatwoot-sdk:1.0.0")
+    implementation("com.github.chatwoot:android-agent-sdk:1.0.0")
 }
 ```
 
