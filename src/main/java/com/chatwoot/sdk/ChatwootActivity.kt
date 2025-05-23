@@ -17,6 +17,8 @@ import com.chatwoot.sdk.models.ChatwootConfiguration
 import com.chatwoot.sdk.models.ChatwootProfile
 import com.chatwoot.sdk.databinding.ActivityChatwootBinding
 import com.chatwoot.sdk.utils.TextDrawable
+import android.graphics.Rect
+import android.view.ViewTreeObserver
 
 class ChatwootActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatwootBinding
@@ -40,6 +42,24 @@ class ChatwootActivity : AppCompatActivity() {
         
         binding = ActivityChatwootBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Add global layout listener to scroll WebView when keyboard is shown
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val rect = Rect()
+            binding.root.getWindowVisibleDisplayFrame(rect)
+            val screenHeight = binding.root.rootView.height
+            val keypadHeight = screenHeight - rect.bottom
+            // If keyboard is open
+            if (keypadHeight > screenHeight * 0.15) {
+                // Scroll WebView to bottom
+                binding.webView.post {
+                    binding.webView.evaluateJavascript(
+                        "(function() { window.scrollTo(0, document.body.scrollHeight); })();",
+                        null
+                    )
+                }
+            }
+        }
 
         // Get configuration and conversation ID
         config = intent.getParcelableExtra("config")
@@ -76,7 +96,7 @@ class ChatwootActivity : AppCompatActivity() {
 
     private fun setupSystemBars() {
         // Make content draw under system bars
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         
         // Set status bar and navigation bar colors
         window.statusBarColor = Color.TRANSPARENT
