@@ -17,4 +17,13 @@ local.properties
 .idea/
 codebase.md
 chatwoot-sdk/build/
+/example/build/
 .aidigestignore
+
+# Generated files for example module
+/example/.gradle/
+/example/build/
+/example/release/
+/example/debug/
+/example/out/
+/example/src/main/java/com/chatwoot/example/ui/theme/.gradle/

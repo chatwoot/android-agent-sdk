@@ -1,0 +1,194 @@
+package com.chatwoot.example
+
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.chatwoot.example.ui.theme.ChatwootExampleTheme
+import com.chatwoot.sdk.ChatwootSDK
+import com.chatwoot.sdk.models.ChatwootConfiguration
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            ChatwootExampleTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    ChatwootConfigScreen(
+                        onOpenChat = { config, conversationId ->
+                            try {
+                                // Setup the SDK with the configuration
+                                ChatwootSDK.setup(config)
+                                
+                                // Load the chat UI with the given conversation ID
+                                ChatwootSDK.loadChatUI(this, conversationId)
+                            } catch (e: Exception) {
+                                showToast("Error: ${e.message}")
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
+    var accountId by remember { mutableStateOf("1") }
+    var host by remember { mutableStateOf("https://app.chatwoot.com") }
+    var accessToken by remember { mutableStateOf("accessToken") }
+    var pubsubToken by remember { mutableStateOf("pubsubToken") }
+    var websocketUrl by remember { mutableStateOf("wss://app.chatwoot.com") }
+    var conversationId by remember { mutableStateOf("1") }
+    
+    var accountIdError by remember { mutableStateOf(false) }
+    var conversationIdError by remember { mutableStateOf(false) }
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(
+            text = "Chatwoot android SDK",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(vertical = 24.dp)
+        )
+        
+        OutlinedTextField(
+            value = accountId,
+            onValueChange = { 
+                accountId = it
+                accountIdError = false
+            },
+            label = { Text("Account ID") },
+            isError = accountIdError,
+            supportingText = { if (accountIdError) Text("Please enter a valid Account ID") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        OutlinedTextField(
+            value = host,
+            onValueChange = { host = it },
+            label = { Text("API Host") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        OutlinedTextField(
+            value = accessToken,
+            onValueChange = { accessToken = it },
+            label = { Text("Access Token") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        OutlinedTextField(
+            value = pubsubToken,
+            onValueChange = { pubsubToken = it },
+            label = { Text("Pubsub Token") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        OutlinedTextField(
+            value = websocketUrl,
+            onValueChange = { websocketUrl = it },
+            label = { Text("Websocket URL") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        OutlinedTextField(
+            value = conversationId,
+            onValueChange = { 
+                conversationId = it
+                conversationIdError = false 
+            },
+            label = { Text("Conversation ID") },
+            isError = conversationIdError,
+            supportingText = { if (conversationIdError) Text("Please enter a valid Conversation ID") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Button(
+            onClick = {
+                try {
+                    val accountIdInt = accountId.toInt()
+                    val conversationIdInt = conversationId.toInt()
+                    
+                    val config = ChatwootConfiguration(
+                        accountId = accountIdInt,
+                        apiHost = host,
+                        accessToken = accessToken,
+                        pubsubToken = pubsubToken,
+                        websocketUrl = websocketUrl
+                    )
+                    
+                    onOpenChat(config, conversationIdInt)
+                } catch (e: NumberFormatException) {
+                    if (accountId.isEmpty() || !accountId.all { it.isDigit() }) {
+                        accountIdError = true
+                    }
+                    if (conversationId.isEmpty() || !conversationId.all { it.isDigit() }) {
+                        conversationIdError = true
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            Text("Open Chat")
+        }
+    }
+}
