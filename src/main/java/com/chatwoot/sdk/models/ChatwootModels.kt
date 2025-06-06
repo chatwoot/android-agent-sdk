@@ -10,10 +10,11 @@ data class ChatwootConfiguration(
     val accessToken: String,
     val pubsubToken: String,
     val websocketUrl: String,
-    val customColor: Int? = null
+    val customColor: Int? = null,
+    val customBackButtonDrawable: Int? = null
 ) : Parcelable
 
 data class ChatwootProfile(
     val name: String,
     val avatarUrl: String? = null
-) 
+)

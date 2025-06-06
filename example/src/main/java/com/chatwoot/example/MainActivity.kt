@@ -20,10 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -37,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.chatwoot.example.ui.theme.ChatwootExampleTheme
@@ -85,6 +89,7 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
     var websocketUrl by remember { mutableStateOf("wss://app.chatwoot.com") }
     var conversationId by remember { mutableStateOf("1") }
     var selectedColor by remember { mutableStateOf<Color?>(null) }
+    var selectedBackButton by remember { mutableStateOf<Int?>(null) }
 
     var accountIdError by remember { mutableStateOf(false) }
     var conversationIdError by remember { mutableStateOf(false) }
@@ -96,6 +101,12 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
         Color(0xFF9C27B0), // Purple
         Color(0xFFF44336), // Red
         Color(0xFF607D8B)  // Blue Grey
+    )
+
+    data class BackButtonOption(val name: String, val drawable: Int?)
+    val backButtonOptions = listOf(
+        BackButtonOption("Android Default", null),
+        BackButtonOption("Custom Design", R.drawable.ic_back_custom)
     )
 
     Column(
@@ -211,6 +222,85 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Back Button Style (Optional)",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                backButtonOptions.forEach { option ->
+                    Card(
+                        modifier = Modifier
+                            .clickable { selectedBackButton = option.drawable }
+                            .weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(
+                                        if (selectedBackButton == option.drawable) 
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else MaterialTheme.colorScheme.surface,
+                                        CircleShape
+                                    )
+                                    .border(
+                                        width = if (selectedBackButton == option.drawable) 2.dp else 1.dp,
+                                        color = if (selectedBackButton == option.drawable) 
+                                            MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.outline,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (option.drawable != null) {
+                                    Icon(
+                                        painter = painterResource(id = option.drawable),
+                                        contentDescription = option.name,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (selectedBackButton == option.drawable) 
+                                            MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                } else {
+                                    Text(
+                                        text = "←",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = if (selectedBackButton == option.drawable) 
+                                            MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = option.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (selectedBackButton == option.drawable) 
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
         
         Button(
@@ -225,7 +315,8 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
                         accessToken = accessToken,
                         pubsubToken = pubsubToken,
                         websocketUrl = websocketUrl,
-                        customColor = selectedColor?.toArgb()
+                        customColor = selectedColor?.toArgb(),
+                        customBackButtonDrawable = selectedBackButton
                     )
                     
                     onOpenChat(config, conversationIdInt)

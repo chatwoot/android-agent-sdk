@@ -19,6 +19,7 @@ import com.chatwoot.sdk.databinding.ActivityChatwootBinding
 import com.chatwoot.sdk.utils.TextDrawable
 import android.graphics.Rect
 import android.view.ViewTreeObserver
+import androidx.core.content.ContextCompat
 
 class ChatwootActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatwootBinding
@@ -36,7 +37,7 @@ class ChatwootActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Get configuration and conversation ID first
         config = intent.getParcelableExtra("config")
             ?: throw IllegalStateException("ChatwootConfiguration is required")
@@ -48,7 +49,7 @@ class ChatwootActivity : AppCompatActivity() {
 
         // Configure window to handle system bars (now that config is available)
         setupSystemBars()
-        
+
         binding = ActivityChatwootBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -73,7 +74,7 @@ class ChatwootActivity : AppCompatActivity() {
         setupHeader()
         setupWebView()
         injectConfiguration()
-        
+
         // Set system bar spaces
         setupSystemBarSpaces()
     }
@@ -89,7 +90,7 @@ class ChatwootActivity : AppCompatActivity() {
             // Apply navigation bar height
             binding.navigationBarSpace.layoutParams.height = insets.bottom
             binding.navigationBarSpace.requestLayout()
-            
+
             WindowInsetsCompat.CONSUMED
         }
     }
@@ -97,7 +98,7 @@ class ChatwootActivity : AppCompatActivity() {
     private fun setupSystemBars() {
         // Make content draw under system bars
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        
+
         // Set status bar and navigation bar colors
         val customColor = config.customColor
         if (customColor != null) {
@@ -126,6 +127,12 @@ class ChatwootActivity : AppCompatActivity() {
         binding.apply {
             backButton.setOnClickListener { finish() }
 
+            // Set custom back button drawable if provided, otherwise keep Android default
+            config.customBackButtonDrawable?.let { customDrawable ->
+                val backButtonDrawable = ContextCompat.getDrawable(this@ChatwootActivity, customDrawable)
+                backButton.setImageDrawable(backButtonDrawable)
+            }
+
             // Apply custom color to header if provided
             config.customColor?.let { color ->
                 statusBarSpace.setBackgroundColor(color)
@@ -140,10 +147,10 @@ class ChatwootActivity : AppCompatActivity() {
                 // Adjust back button tint
                 backButton.drawable?.setTint(textColor)
             }
-            
+
             // Set default profile name
             profileName.text = "Chat User"
-            
+
             // Update profile when available
             ChatwootSDK.getProfile { newProfile ->
                 runOnUiThread {
@@ -156,7 +163,7 @@ class ChatwootActivity : AppCompatActivity() {
     private fun updateProfile(profile: ChatwootProfile?) {
         profile?.let {
             binding.profileName.text = it.name
-            
+
             // Load avatar if available
             it.avatarUrl?.let { url ->
                 binding.avatarImage.load(url) {
@@ -197,9 +204,9 @@ class ChatwootActivity : AppCompatActivity() {
                 allowFileAccess = true
                 javaScriptCanOpenWindowsAutomatically = true
             }
-            
+
             addJavascriptInterface(WebAppInterface(), "AndroidInterface")
-            
+
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(
                     view: WebView,
@@ -225,7 +232,7 @@ class ChatwootActivity : AppCompatActivity() {
             window.__PUBSUB_TOKEN__ = '${config.pubsubToken}';
             window.__WEBSOCKET_URL__ = '${config.websocketUrl}';
             window.__WOOT_CONVERSATION_ID__ = $conversationId;
-            
+
             console.log('Injecting config:', {
                 accountId: window.__WOOT_ACCOUNT_ID__,
                 apiHost: window.__WOOT_API_HOST__,
@@ -234,10 +241,10 @@ class ChatwootActivity : AppCompatActivity() {
                 websocketUrl: window.__WEBSOCKET_URL__,
                 conversationId: window.__WOOT_CONVERSATION_ID__
             });
-            
+
             // Dispatch configuration loaded event
             document.dispatchEvent(
-                new CustomEvent('chatwootConfigLoaded', { 
+                new CustomEvent('chatwootConfigLoaded', {
                     detail: {
                         accountId: ${config.accountId},
                         apiHost: '${config.apiHost}',
@@ -262,4 +269,4 @@ class ChatwootActivity : AppCompatActivity() {
             super.onBackPressed()
         }
     }
-} 
+}
