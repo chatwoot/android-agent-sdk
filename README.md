@@ -42,10 +42,17 @@ dependencies {
 }
 ```
 
-## 📸 Camera and Photo Library Permissions (Required)
+## 📱 Required Permissions
 
-To enable photo capture or image upload features in the chat interface, **you must add the following permissions to your app's `AndroidManifest.xml`:**
+Add the following permissions to your app's `AndroidManifest.xml`:
 
+### Network Access (Required)
+```xml
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+### Camera and Photo Library (Required for media features)
 ```xml
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

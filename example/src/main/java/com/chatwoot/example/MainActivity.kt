@@ -90,6 +90,8 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
     var conversationId by remember { mutableStateOf("1") }
     var selectedColor by remember { mutableStateOf<Color?>(null) }
     var selectedBackButton by remember { mutableStateOf<Int?>(null) }
+    var selectedConnectedIcon by remember { mutableStateOf<Int?>(null) }
+    var selectedDisconnectedIcon by remember { mutableStateOf<Int?>(null) }
 
     var accountIdError by remember { mutableStateOf(false) }
     var conversationIdError by remember { mutableStateOf(false) }
@@ -107,6 +109,12 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
     val backButtonOptions = listOf(
         BackButtonOption("Android Default", null),
         BackButtonOption("Custom Design", R.drawable.ic_back_custom)
+    )
+    
+    data class NetworkIconOption(val name: String, val connectedIcon: Int?, val disconnectedIcon: Int?)
+    val networkIconOptions = listOf(
+        NetworkIconOption("SDK Default", null, null),
+        NetworkIconOption("Custom Design", R.drawable.ic_cloud_connected, R.drawable.ic_cloud_disconnected)
     )
 
     Column(
@@ -301,6 +309,133 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Network Status Icons (Optional)",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                networkIconOptions.forEach { option ->
+                    Card(
+                        modifier = Modifier
+                            .clickable { 
+                                selectedConnectedIcon = option.connectedIcon
+                                selectedDisconnectedIcon = option.disconnectedIcon
+                            }
+                            .weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Connected icon preview
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .background(
+                                            if (selectedConnectedIcon == option.connectedIcon) 
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            else MaterialTheme.colorScheme.surface,
+                                            CircleShape
+                                        )
+                                        .border(
+                                            width = if (selectedConnectedIcon == option.connectedIcon) 2.dp else 1.dp,
+                                            color = if (selectedConnectedIcon == option.connectedIcon) 
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.outline,
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (option.connectedIcon != null) {
+                                        Icon(
+                                            painter = painterResource(id = option.connectedIcon),
+                                            contentDescription = "Connected",
+                                            modifier = Modifier.size(12.dp),
+                                            tint = if (selectedConnectedIcon == option.connectedIcon) 
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "📶",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (selectedConnectedIcon == option.connectedIcon) 
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                                
+                                // Disconnected icon preview
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .background(
+                                            if (selectedDisconnectedIcon == option.disconnectedIcon) 
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            else MaterialTheme.colorScheme.surface,
+                                            CircleShape
+                                        )
+                                        .border(
+                                            width = if (selectedDisconnectedIcon == option.disconnectedIcon) 2.dp else 1.dp,
+                                            color = if (selectedDisconnectedIcon == option.disconnectedIcon) 
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.outline,
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (option.disconnectedIcon != null) {
+                                        Icon(
+                                            painter = painterResource(id = option.disconnectedIcon),
+                                            contentDescription = "Disconnected",
+                                            modifier = Modifier.size(12.dp),
+                                            tint = if (selectedDisconnectedIcon == option.disconnectedIcon) 
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "📵",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (selectedDisconnectedIcon == option.disconnectedIcon) 
+                                                MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = option.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (selectedConnectedIcon == option.connectedIcon) 
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
         
         Button(
@@ -316,7 +451,9 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
                         pubsubToken = pubsubToken,
                         websocketUrl = websocketUrl,
                         customColor = selectedColor?.toArgb(),
-                        customBackButtonDrawable = selectedBackButton
+                        customBackButtonDrawable = selectedBackButton,
+                        customConnectedIcon = selectedConnectedIcon,
+                        customDisconnectedIcon = selectedDisconnectedIcon
                     )
                     
                     onOpenChat(config, conversationIdInt)

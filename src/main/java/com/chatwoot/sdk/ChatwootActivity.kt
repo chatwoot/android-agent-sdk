@@ -20,12 +20,19 @@ import com.chatwoot.sdk.utils.TextDrawable
 import android.graphics.Rect
 import android.view.ViewTreeObserver
 import androidx.core.content.ContextCompat
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 
 class ChatwootActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatwootBinding
     private var profile: ChatwootProfile? = null
     private lateinit var config: ChatwootConfiguration
     private var conversationId: Int = 0
+    private lateinit var connectivityManager: ConnectivityManager
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     private inner class WebAppInterface {
         @JavascriptInterface
@@ -71,6 +78,7 @@ class ChatwootActivity : AppCompatActivity() {
             }
         }
 
+        setupNetworkMonitoring()
         setupHeader()
         setupWebView()
         injectConfiguration()
@@ -146,7 +154,13 @@ class ChatwootActivity : AppCompatActivity() {
 
                 // Adjust back button tint
                 backButton.drawable?.setTint(textColor)
+                
+                // Adjust network status icon tint
+                networkStatusIcon.drawable?.setTint(textColor)
             }
+
+            // Set up network status icons
+            setupNetworkStatusIcons()
 
             // Set default profile name
             profileName.text = "Chat User"
@@ -259,6 +273,79 @@ class ChatwootActivity : AppCompatActivity() {
 
         binding.webView.evaluateJavascript(script) { result ->
             Log.d("ChatwootSDK", "Configuration injection result: $result")
+        }
+    }
+
+    private fun setupNetworkStatusIcons() {
+        // Update icon based on current connectivity if connectivityManager is initialized
+        if (::connectivityManager.isInitialized) {
+            updateNetworkStatusIcon(isNetworkAvailable())
+        } else {
+            // Default to connected state if we can't check yet
+            updateNetworkStatusIcon(true)
+        }
+    }
+
+    private fun setupNetworkMonitoring() {
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        
+        // Update the network status icon with the actual connectivity state now that we can check
+        updateNetworkStatusIcon(isNetworkAvailable())
+        
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread {
+                    updateNetworkStatusIcon(true)
+                }
+            }
+
+            override fun onLost(network: Network) {
+                runOnUiThread {
+                    updateNetworkStatusIcon(false)
+                }
+            }
+        }
+
+        val networkRequest = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        networkCallback?.let {
+            connectivityManager.registerNetworkCallback(networkRequest, it)
+        }
+    }
+
+    private fun updateNetworkStatusIcon(isConnected: Boolean) {
+        val icon = if (isConnected) {
+            config.customConnectedIcon?.let {
+                ContextCompat.getDrawable(this, it)
+            } ?: ContextCompat.getDrawable(this, R.drawable.ic_network_connected)
+        } else {
+            config.customDisconnectedIcon?.let {
+                ContextCompat.getDrawable(this, it)
+            } ?: ContextCompat.getDrawable(this, R.drawable.ic_network_disconnected)
+        }
+        
+        binding.networkStatusIcon.setImageDrawable(icon)
+        
+        // Apply color tint if custom color is set
+        config.customColor?.let { color ->
+            val isLightColor = isColorLight(color)
+            val textColor = if (isLightColor) Color.BLACK else Color.WHITE
+            binding.networkStatusIcon.drawable?.setTint(textColor)
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val activeNetwork = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        networkCallback?.let {
+            connectivityManager.unregisterNetworkCallback(it)
         }
     }
 
