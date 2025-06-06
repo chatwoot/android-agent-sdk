@@ -138,34 +138,6 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
         
         OutlinedTextField(
-            value = accessToken,
-            onValueChange = { accessToken = it },
-            label = { Text("Access Token") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        OutlinedTextField(
-            value = pubsubToken,
-            onValueChange = { pubsubToken = it },
-            label = { Text("Pubsub Token") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        OutlinedTextField(
-            value = websocketUrl,
-            onValueChange = { websocketUrl = it },
-            label = { Text("Websocket URL") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-        )
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        OutlinedTextField(
             value = conversationId,
             onValueChange = { 
                 conversationId = it
