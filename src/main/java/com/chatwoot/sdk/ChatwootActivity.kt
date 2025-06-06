@@ -37,7 +37,16 @@ class ChatwootActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Configure window to handle system bars
+        // Get configuration and conversation ID first
+        config = intent.getParcelableExtra("config")
+            ?: throw IllegalStateException("ChatwootConfiguration is required")
+
+        conversationId = intent.getIntExtra("conversationId", 0)
+        if (conversationId == 0) {
+            throw IllegalStateException("Conversation ID is required")
+        }
+
+        // Configure window to handle system bars (now that config is available)
         setupSystemBars()
         
         binding = ActivityChatwootBinding.inflate(layoutInflater)
@@ -59,15 +68,6 @@ class ChatwootActivity : AppCompatActivity() {
                     )
                 }
             }
-        }
-
-        // Get configuration and conversation ID
-        config = intent.getParcelableExtra("config")
-            ?: throw IllegalStateException("ChatwootConfiguration is required")
-        
-        conversationId = intent.getIntExtra("conversationId", 0)
-        if (conversationId == 0) {
-            throw IllegalStateException("Conversation ID is required")
         }
 
         setupHeader()
@@ -99,19 +99,47 @@ class ChatwootActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, true)
         
         // Set status bar and navigation bar colors
-        window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.TRANSPARENT
-        
-        // Make system bar icons dark
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
+        val customColor = config.customColor
+        if (customColor != null) {
+            window.statusBarColor = customColor
+            window.navigationBarColor = customColor
+
+            // Adjust system bar icon colors based on custom color brightness
+            val isLightColor = isColorLight(customColor)
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                isAppearanceLightStatusBars = isLightColor
+                isAppearanceLightNavigationBars = isLightColor
+            }
+        } else {
+            window.statusBarColor = Color.TRANSPARENT
+            window.navigationBarColor = Color.TRANSPARENT
+
+            // Make system bar icons dark for transparent bars
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                isAppearanceLightStatusBars = true
+                isAppearanceLightNavigationBars = true
+            }
         }
     }
 
     private fun setupHeader() {
         binding.apply {
             backButton.setOnClickListener { finish() }
+
+            // Apply custom color to header if provided
+            config.customColor?.let { color ->
+                statusBarSpace.setBackgroundColor(color)
+                toolbar.setBackgroundColor(color)
+                navigationBarSpace.setBackgroundColor(color)
+
+                // Adjust text color based on background brightness
+                val isLightColor = isColorLight(color)
+                val textColor = if (isLightColor) Color.BLACK else Color.WHITE
+                profileName.setTextColor(textColor)
+
+                // Adjust back button tint
+                backButton.drawable?.setTint(textColor)
+            }
             
             // Set default profile name
             profileName.text = "Chat User"
@@ -149,6 +177,16 @@ class ChatwootActivity : AppCompatActivity() {
             .mapNotNull { it.firstOrNull()?.toString() }
             .joinToString("")
             .uppercase()
+    }
+
+    private fun isColorLight(color: Int): Boolean {
+        val red = Color.red(color)
+        val green = Color.green(color)
+        val blue = Color.blue(color)
+
+        // Calculate luminance using the standard formula
+        val luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255
+        return luminance > 0.5
     }
 
     private fun setupWebView() {

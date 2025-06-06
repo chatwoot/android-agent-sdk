@@ -9,7 +9,8 @@ data class ChatwootConfiguration(
     val apiHost: String,
     val accessToken: String,
     val pubsubToken: String,
-    val websocketUrl: String
+    val websocketUrl: String,
+    val customColor: Int? = null
 ) : Parcelable
 
 data class ChatwootProfile(
