@@ -150,7 +150,10 @@ class ChatwootActivity : AppCompatActivity() {
                 // Adjust text color based on background brightness
                 val isLightColor = isColorLight(color)
                 val textColor = if (isLightColor) Color.BLACK else Color.WHITE
+                val subtitleColor = if (isLightColor) Color.parseColor("#666666") else Color.parseColor("#CCCCCC")
+                
                 profileName.setTextColor(textColor)
+                inboxName.setTextColor(subtitleColor)
 
                 // Adjust back button tint
                 backButton.drawable?.setTint(textColor)
@@ -162,8 +165,9 @@ class ChatwootActivity : AppCompatActivity() {
             // Set up network status icons
             setupNetworkStatusIcons()
 
-            // Set default profile name
+            // Set default profile name and inbox name
             profileName.text = "Chat User"
+            inboxName.text = config.inboxName
 
             // Update profile when available
             ChatwootSDK.getProfile { newProfile ->

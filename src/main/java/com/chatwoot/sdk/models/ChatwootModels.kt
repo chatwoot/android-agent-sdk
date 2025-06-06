@@ -13,7 +13,8 @@ data class ChatwootConfiguration(
     val customColor: Int? = null,
     val customBackButtonDrawable: Int? = null,
     val customConnectedIcon: Int? = null,
-    val customDisconnectedIcon: Int? = null
+    val customDisconnectedIcon: Int? = null,
+    val inboxName: String = "Resident Name"
 ) : Parcelable
 
 data class ChatwootProfile(

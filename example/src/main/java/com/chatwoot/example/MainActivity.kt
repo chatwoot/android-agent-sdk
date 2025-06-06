@@ -88,6 +88,7 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
     var pubsubToken by remember { mutableStateOf("pubsubToken") }
     var websocketUrl by remember { mutableStateOf("wss://app.chatwoot.com") }
     var conversationId by remember { mutableStateOf("1") }
+    var inboxName by remember { mutableStateOf("Resident Name") }
     var selectedColor by remember { mutableStateOf<Color?>(null) }
     var selectedBackButton by remember { mutableStateOf<Int?>(null) }
     var selectedConnectedIcon by remember { mutableStateOf<Int?>(null) }
@@ -453,7 +454,8 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
                         customColor = selectedColor?.toArgb(),
                         customBackButtonDrawable = selectedBackButton,
                         customConnectedIcon = selectedConnectedIcon,
-                        customDisconnectedIcon = selectedDisconnectedIcon
+                        customDisconnectedIcon = selectedDisconnectedIcon,
+                        inboxName = inboxName
                     )
                     
                     onOpenChat(config, conversationIdInt)

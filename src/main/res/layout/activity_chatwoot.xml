@@ -57,17 +57,34 @@
                         app:shapeAppearanceOverlay="@style/CircleImageView"
                         android:background="@color/avatar_background" />
 
-                    <TextView
-                        android:id="@+id/profileName"
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/profileName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/inboxName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="#666666"
+                            android:textSize="12sp"
+                            android:text="Resident Name" />
+
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/networkStatusIcon"
