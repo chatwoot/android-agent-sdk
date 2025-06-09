@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- WiFi Disconnected Icon -->
+    <path
+        android:fillColor="#666666"
+        android:pathData="M1,9L23,9C21,7 15.5,2 12,2C8.5,2 3,7 1,9Z"/>
+    <path
+        android:fillColor="#666666"
+        android:pathData="M4,12L20,12C19,11 15.5,8 12,8C8.5,8 5,11 4,12Z"/>
+    <path
+        android:fillColor="#666666"
+        android:pathData="M7,15L17,15C16.5,14.5 14.5,13 12,13C9.5,13 7.5,14.5 7,15Z"/>
+    <!-- X mark overlay for disconnected -->
+    <path
+        android:fillColor="#666666"
+        android:pathData="M22,3L21,2L12,11L3,2L2,3L11,12L2,21L3,22L12,13L21,22L22,21L13,12Z" />
+</vector>
