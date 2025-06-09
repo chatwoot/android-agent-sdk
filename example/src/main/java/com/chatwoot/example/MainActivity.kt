@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -93,6 +94,9 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
     var selectedBackButton by remember { mutableStateOf<Int?>(null) }
     var selectedConnectedIcon by remember { mutableStateOf<Int?>(null) }
     var selectedDisconnectedIcon by remember { mutableStateOf<Int?>(null) }
+
+    var disableEditor by remember { mutableStateOf(false) }
+    var editorDisableUpload by remember { mutableStateOf(false) }
 
     var accountIdError by remember { mutableStateOf(false) }
     var conversationIdError by remember { mutableStateOf(false) }
@@ -437,6 +441,62 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Editor Settings",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Disable Editor",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Turn off the message editor completely",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = disableEditor,
+                    onCheckedChange = { disableEditor = it }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Disable File Upload",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Hide file upload button in editor",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = editorDisableUpload,
+                    onCheckedChange = { editorDisableUpload = it }
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
         
         Button(
@@ -455,7 +515,9 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
                         customBackButtonDrawable = selectedBackButton,
                         customConnectedIcon = selectedConnectedIcon,
                         customDisconnectedIcon = selectedDisconnectedIcon,
-                        inboxName = inboxName
+                        inboxName = inboxName,
+                        disableEditor = disableEditor,
+                        editorDisableUpload = editorDisableUpload
                     )
                     
                     onOpenChat(config, conversationIdInt)
