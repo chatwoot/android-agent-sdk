@@ -31,7 +31,11 @@ class ChatwootActivity : AppCompatActivity() {
     private var profile: ChatwootProfile? = null
     private lateinit var config: ChatwootConfiguration
     private var conversationId: Int = 0
+    private lateinit var connectivityManager: ConnectivityManager
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var isWebViewReady = false
+    private var lastNetworkState: Boolean? = null
+    private var networkStateRunnable: Runnable? = null
 
     private inner class WebAppInterface {
         @JavascriptInterface
@@ -77,6 +81,7 @@ class ChatwootActivity : AppCompatActivity() {
             }
         }
 
+        setupNetworkMonitoring()
         setupHeader()
         setupWebView()
         injectConfiguration()
@@ -160,11 +165,8 @@ class ChatwootActivity : AppCompatActivity() {
                 networkStatusIcon.drawable?.setTint(textColor)
             }
 
-            // Always show connected icon
-            binding.networkStatusIcon.setImageDrawable(
-                config.customConnectedIcon?.let { ContextCompat.getDrawable(this@ChatwootActivity, it) }
-                    ?: ContextCompat.getDrawable(this@ChatwootActivity, R.drawable.ic_network_connected)
-            )
+            // Set up network status icons - will be updated by network monitoring
+            setupNetworkStatusIcons()
 
             // Set default profile name and inbox name
             profileName.text = "Chat User"
@@ -244,7 +246,8 @@ class ChatwootActivity : AppCompatActivity() {
     }
 
     private fun injectConfiguration() {
-        val shouldDisableEditor = config.disableEditor
+        val isOnline = isNetworkAvailable()
+        val shouldDisableEditor = config.disableEditor || !isOnline
         val script = """
             console.log('Chatwoot SDK configuration loaded');
 
@@ -258,7 +261,7 @@ class ChatwootActivity : AppCompatActivity() {
             window.__WOOT_CONVERSATION_ID__ = $conversationId;
             window.__WOOT_DISABLE_EDITOR__ = $shouldDisableEditor;
             window.__WOOT_EDITOR_DISABLE_UPLOAD__ = ${config.editorDisableUpload};
-            window.__WOOT_IS_ONLINE__ = true;
+            window.__WOOT_IS_ONLINE__ = $isOnline;
             window.__DISABLE_EDITOR__ = $shouldDisableEditor;
             window.__EDITOR_DISABLE_UPLOAD__ = ${config.editorDisableUpload};
             window.disableEditor = $shouldDisableEditor;
@@ -276,7 +279,7 @@ class ChatwootActivity : AppCompatActivity() {
                         conversationId: $conversationId,
                         disableEditor: $shouldDisableEditor,
                         editorDisableUpload: ${config.editorDisableUpload},
-                        isOnline: true
+                        isOnline: $isOnline
                     }
                 })
             );
@@ -287,8 +290,208 @@ class ChatwootActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupNetworkStatusIcons() {
+        // Update icon based on current connectivity if connectivityManager is initialized
+        if (::connectivityManager.isInitialized) {
+            updateNetworkStatusIcon(isNetworkAvailable())
+        } else {
+            // Default to connected state if we can't check yet
+            updateNetworkStatusIcon(true)
+        }
+    }
+
+    private fun setupNetworkMonitoring() {
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        
+        // Update the network status icon with the actual connectivity state
+        updateNetworkStatusIcon(isNetworkAvailable())
+        
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                val hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                val hasCellular = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                
+                // Consider online if we have internet capability and connected via WiFi or cellular
+                val isOnline = hasInternet && (hasWifi || hasCellular)
+                
+                runOnUiThread {
+                    updateNetworkStatusIcon(isOnline)
+                    if (isWebViewReady) {
+                        updateNetworkStatus(isOnline)
+                    }
+                }
+            }
+
+            override fun onLost(network: Network) {
+                runOnUiThread {
+                    updateNetworkStatusIcon(false)
+                    if (isWebViewReady) {
+                        updateNetworkStatus(false)
+                    }
+                }
+            }
+        }
+
+        val networkRequest = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        networkCallback?.let {
+            connectivityManager.registerNetworkCallback(networkRequest, it)
+        }
+    }
+
+    private fun updateNetworkStatusIcon(isConnected: Boolean) {
+        val icon = if (isConnected) {
+            config.customConnectedIcon?.let {
+                ContextCompat.getDrawable(this, it)
+            } ?: ContextCompat.getDrawable(this, R.drawable.ic_network_connected)
+        } else {
+            config.customDisconnectedIcon?.let {
+                ContextCompat.getDrawable(this, it)
+            } ?: ContextCompat.getDrawable(this, R.drawable.ic_network_disconnected)
+        }
+        
+        binding.networkStatusIcon.setImageDrawable(icon)
+        
+        // Apply color tint if custom color is set
+        config.customColor?.let { color ->
+            val isLightColor = isColorLight(color)
+            val textColor = if (isLightColor) Color.BLACK else Color.WHITE
+            binding.networkStatusIcon.drawable?.setTint(textColor)
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val activeNetwork = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+        
+        val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        val hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        val hasCellular = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+        
+        return hasInternet && (hasWifi || hasCellular)
+    }
+
+    private fun updateNetworkStatus(isOnline: Boolean) {
+        // Only update if state actually changed
+        if (lastNetworkState == isOnline) {
+            return
+        }
+        
+        Log.d("ChatwootSDK", "Network status changed: isOnline=$isOnline")
+        
+        // Cancel any pending network state updates
+        networkStateRunnable?.let {
+            binding.webView.removeCallbacks(it)
+        }
+        
+        // Debounce rapid network changes - wait 1 second before applying
+        networkStateRunnable = Runnable {
+            lastNetworkState = isOnline
+            updateEditorStateOnly(isOnline)
+        }
+        
+        binding.webView.postDelayed(networkStateRunnable!!, 1000)
+    }
+
+    private fun updateEditorStateOnly(isOnline: Boolean) {
+        val shouldDisableEditor = config.disableEditor || !isOnline
+        val script = """
+            console.log('Network status update:', $isOnline);
+
+            // Re-dispatch the chatwootConfigLoaded event with updated editor state
+            document.dispatchEvent(
+                new CustomEvent('chatwootConfigLoaded', {
+                    detail: {
+                        accountId: ${config.accountId},
+                        apiHost: '${config.apiHost}',
+                        accessToken: '${config.accessToken}',
+                        pubsubToken: '${config.pubsubToken}',
+                        websocketUrl: '${config.websocketUrl}',
+                        conversationId: $conversationId,
+                        disableEditor: $shouldDisableEditor,
+                        editorDisableUpload: ${config.editorDisableUpload},
+                        isOnline: $isOnline
+                    }
+                })
+            );
+
+            // Update editor functionality and button styling when network state changes
+            setTimeout(() => {
+                // Handle input elements
+                const inputs = document.querySelectorAll('input, textarea, [contenteditable]');
+                inputs.forEach(input => {
+                    if ($shouldDisableEditor) {
+                        if (!input.getAttribute('data-offline-disabled')) {
+                            if (input.contentEditable !== undefined) {
+                                input.contentEditable = 'false';
+                            } else {
+                                input.disabled = true;
+                            }
+                            input.style.pointerEvents = 'none';
+                            input.setAttribute('data-offline-disabled', 'true');
+                        }
+                    } else {
+                        if (input.getAttribute('data-offline-disabled')) {
+                            if (input.contentEditable !== undefined) {
+                                input.contentEditable = 'true';
+                            } else {
+                                input.disabled = false;
+                            }
+                            input.style.pointerEvents = '';
+                            input.removeAttribute('data-offline-disabled');
+                        }
+                    }
+                });
+                
+                // Handle buttons
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(button => {
+                    if ($shouldDisableEditor) {
+                        if (!button.getAttribute('data-offline-disabled')) {
+                            button.setAttribute('data-original-filter', button.style.filter || '');
+                            button.setAttribute('data-original-opacity', button.style.opacity || '');
+                            button.setAttribute('data-original-disabled', button.disabled.toString());
+                            
+                            button.disabled = true;
+                            button.style.filter = 'grayscale(1)';
+                            button.style.opacity = '0.6';
+                            button.style.pointerEvents = 'none';
+                            button.setAttribute('data-offline-disabled', 'true');
+                        }
+                    } else {
+                        if (button.getAttribute('data-offline-disabled')) {
+                            const originalFilter = button.getAttribute('data-original-filter');
+                            const originalOpacity = button.getAttribute('data-original-opacity');
+                            const originalDisabled = button.getAttribute('data-original-disabled') === 'true';
+                            
+                            button.style.filter = originalFilter || '';
+                            button.style.opacity = originalOpacity || '';
+                            button.style.pointerEvents = '';
+                            button.disabled = originalDisabled;
+                            
+                            button.removeAttribute('data-original-filter');
+                            button.removeAttribute('data-original-opacity');
+                            button.removeAttribute('data-original-disabled');
+                            button.removeAttribute('data-offline-disabled');
+                        }
+                    }
+                });
+            }, 100);
+        """.trimIndent()
+
+        binding.webView.evaluateJavascript(script) { result ->
+            Log.d("ChatwootSDK", "Network status update result: $result")
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        networkCallback?.let {
+            connectivityManager.unregisterNetworkCallback(it)
+        }
     }
 
     override fun onBackPressed() {
