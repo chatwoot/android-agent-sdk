@@ -31,8 +31,7 @@ class ChatwootActivity : AppCompatActivity() {
     private var profile: ChatwootProfile? = null
     private lateinit var config: ChatwootConfiguration
     private var conversationId: Int = 0
-    private lateinit var connectivityManager: ConnectivityManager
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var isWebViewReady = false
 
     private inner class WebAppInterface {
         @JavascriptInterface
@@ -78,7 +77,6 @@ class ChatwootActivity : AppCompatActivity() {
             }
         }
 
-        setupNetworkMonitoring()
         setupHeader()
         setupWebView()
         injectConfiguration()
@@ -162,8 +160,11 @@ class ChatwootActivity : AppCompatActivity() {
                 networkStatusIcon.drawable?.setTint(textColor)
             }
 
-            // Set up network status icons
-            setupNetworkStatusIcons()
+            // Always show connected icon
+            binding.networkStatusIcon.setImageDrawable(
+                config.customConnectedIcon?.let { ContextCompat.getDrawable(this@ChatwootActivity, it) }
+                    ?: ContextCompat.getDrawable(this@ChatwootActivity, R.drawable.ic_network_connected)
+            )
 
             // Set default profile name and inbox name
             profileName.text = "Chat User"
@@ -233,6 +234,7 @@ class ChatwootActivity : AppCompatActivity() {
 
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
+                    isWebViewReady = true
                     injectConfiguration()
                 }
             }
@@ -242,7 +244,11 @@ class ChatwootActivity : AppCompatActivity() {
     }
 
     private fun injectConfiguration() {
+        val shouldDisableEditor = config.disableEditor
         val script = """
+            console.log('Chatwoot SDK configuration loaded');
+
+            // Set all possible variable combinations
             window.__WOOT_ISOLATED_SHELL__ = true;
             window.__WOOT_ACCOUNT_ID__ = ${config.accountId};
             window.__WOOT_API_HOST__ = '${config.apiHost}';
@@ -250,15 +256,13 @@ class ChatwootActivity : AppCompatActivity() {
             window.__PUBSUB_TOKEN__ = '${config.pubsubToken}';
             window.__WEBSOCKET_URL__ = '${config.websocketUrl}';
             window.__WOOT_CONVERSATION_ID__ = $conversationId;
-
-            console.log('Injecting config:', {
-                accountId: window.__WOOT_ACCOUNT_ID__,
-                apiHost: window.__WOOT_API_HOST__,
-                accessToken: window.__WOOT_ACCESS_TOKEN__,
-                pubsubToken: window.__PUBSUB_TOKEN__,
-                websocketUrl: window.__WEBSOCKET_URL__,
-                conversationId: window.__WOOT_CONVERSATION_ID__
-            });
+            window.__WOOT_DISABLE_EDITOR__ = $shouldDisableEditor;
+            window.__WOOT_EDITOR_DISABLE_UPLOAD__ = ${config.editorDisableUpload};
+            window.__WOOT_IS_ONLINE__ = true;
+            window.__DISABLE_EDITOR__ = $shouldDisableEditor;
+            window.__EDITOR_DISABLE_UPLOAD__ = ${config.editorDisableUpload};
+            window.disableEditor = $shouldDisableEditor;
+            window.editorDisableUpload = ${config.editorDisableUpload};
 
             // Dispatch configuration loaded event
             document.dispatchEvent(
@@ -269,7 +273,10 @@ class ChatwootActivity : AppCompatActivity() {
                         accessToken: '${config.accessToken}',
                         pubsubToken: '${config.pubsubToken}',
                         websocketUrl: '${config.websocketUrl}',
-                        conversationId: $conversationId
+                        conversationId: $conversationId,
+                        disableEditor: $shouldDisableEditor,
+                        editorDisableUpload: ${config.editorDisableUpload},
+                        isOnline: true
                     }
                 })
             );
@@ -280,77 +287,8 @@ class ChatwootActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupNetworkStatusIcons() {
-        // Update icon based on current connectivity if connectivityManager is initialized
-        if (::connectivityManager.isInitialized) {
-            updateNetworkStatusIcon(isNetworkAvailable())
-        } else {
-            // Default to connected state if we can't check yet
-            updateNetworkStatusIcon(true)
-        }
-    }
-
-    private fun setupNetworkMonitoring() {
-        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        
-        // Update the network status icon with the actual connectivity state now that we can check
-        updateNetworkStatusIcon(isNetworkAvailable())
-        
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                runOnUiThread {
-                    updateNetworkStatusIcon(true)
-                }
-            }
-
-            override fun onLost(network: Network) {
-                runOnUiThread {
-                    updateNetworkStatusIcon(false)
-                }
-            }
-        }
-
-        val networkRequest = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-
-        networkCallback?.let {
-            connectivityManager.registerNetworkCallback(networkRequest, it)
-        }
-    }
-
-    private fun updateNetworkStatusIcon(isConnected: Boolean) {
-        val icon = if (isConnected) {
-            config.customConnectedIcon?.let {
-                ContextCompat.getDrawable(this, it)
-            } ?: ContextCompat.getDrawable(this, R.drawable.ic_network_connected)
-        } else {
-            config.customDisconnectedIcon?.let {
-                ContextCompat.getDrawable(this, it)
-            } ?: ContextCompat.getDrawable(this, R.drawable.ic_network_disconnected)
-        }
-        
-        binding.networkStatusIcon.setImageDrawable(icon)
-        
-        // Apply color tint if custom color is set
-        config.customColor?.let { color ->
-            val isLightColor = isColorLight(color)
-            val textColor = if (isLightColor) Color.BLACK else Color.WHITE
-            binding.networkStatusIcon.drawable?.setTint(textColor)
-        }
-    }
-
-    private fun isNetworkAvailable(): Boolean {
-        val activeNetwork = connectivityManager.activeNetwork ?: return false
-        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
     override fun onDestroy() {
         super.onDestroy()
-        networkCallback?.let {
-            connectivityManager.unregisterNetworkCallback(it)
-        }
     }
 
     override fun onBackPressed() {
