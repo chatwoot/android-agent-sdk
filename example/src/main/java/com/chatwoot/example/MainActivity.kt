@@ -516,6 +516,7 @@ fun ChatwootConfigScreen(onOpenChat: (ChatwootConfiguration, Int) -> Unit) {
                         customConnectedIcon = selectedConnectedIcon,
                         customDisconnectedIcon = selectedDisconnectedIcon,
                         inboxName = inboxName,
+                        inboxNameFontSize = 18f, // Example: slightly larger font
                         disableEditor = disableEditor,
                         editorDisableUpload = editorDisableUpload
                     )

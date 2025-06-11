@@ -160,8 +160,9 @@ class ChatwootActivity : AppCompatActivity() {
             // Set up network status icons - will be updated by network monitoring
             setupNetworkStatusIcons()
 
-            // Set inbox name
+            // Set inbox name and font size
             inboxName.text = config.inboxName
+            inboxName.textSize = config.inboxNameFontSize
         }
     }
 

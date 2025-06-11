@@ -15,6 +15,7 @@ data class ChatwootConfiguration(
     val customConnectedIcon: Int? = null,
     val customDisconnectedIcon: Int? = null,
     val inboxName: String = "Resident Name",
+    val inboxNameFontSize: Float = 16f,
     val disableEditor: Boolean = false,
     val editorDisableUpload: Boolean = false
 ) : Parcelable
