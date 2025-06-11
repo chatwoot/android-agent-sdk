@@ -28,7 +28,6 @@ import android.net.NetworkRequest
 
 class ChatwootActivity : AppCompatActivity() {
     private lateinit var binding: ActivityChatwootBinding
-    private var profile: ChatwootProfile? = null
     private lateinit var config: ChatwootConfiguration
     private var conversationId: Int = 0
     private lateinit var connectivityManager: ConnectivityManager
@@ -148,10 +147,8 @@ class ChatwootActivity : AppCompatActivity() {
                 // Adjust text color based on background brightness
                 val isLightColor = isColorLight(color)
                 val textColor = if (isLightColor) Color.BLACK else Color.WHITE
-                val subtitleColor = if (isLightColor) Color.parseColor("#666666") else Color.parseColor("#CCCCCC")
                 
-                profileName.setTextColor(textColor)
-                inboxName.setTextColor(subtitleColor)
+                inboxName.setTextColor(textColor)
 
                 // Adjust back button tint
                 backButton.drawable?.setTint(textColor)
@@ -163,44 +160,11 @@ class ChatwootActivity : AppCompatActivity() {
             // Set up network status icons - will be updated by network monitoring
             setupNetworkStatusIcons()
 
-            // Set default profile name and inbox name
-            profileName.text = "Chat User"
+            // Set inbox name
             inboxName.text = config.inboxName
-
-            // Update profile when available
-            ChatwootSDK.getProfile { newProfile ->
-                runOnUiThread {
-                    updateProfile(newProfile)
-                }
-            }
         }
     }
 
-    private fun updateProfile(profile: ChatwootProfile?) {
-        profile?.let {
-            binding.profileName.text = it.name
-
-            // Load avatar if available
-            it.avatarUrl?.let { url ->
-                binding.avatarImage.load(url) {
-                    transformations(CircleCropTransformation())
-                }
-            } ?: run {
-                // Show initials avatar
-                binding.avatarImage.setImageDrawable(
-                    TextDrawable.create(getInitials(it.name))
-                )
-            }
-        }
-    }
-
-    private fun getInitials(name: String): String {
-        return name.split(" ")
-            .take(2)
-            .mapNotNull { it.firstOrNull()?.toString() }
-            .joinToString("")
-            .uppercase()
-    }
 
     private fun isColorLight(color: Int): Boolean {
         val red = Color.red(color)
