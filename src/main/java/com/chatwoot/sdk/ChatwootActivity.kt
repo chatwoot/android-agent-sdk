@@ -110,26 +110,22 @@ class ChatwootActivity : AppCompatActivity() {
         // Make content draw under system bars
         WindowCompat.setDecorFitsSystemWindows(window, true)
 
-        // Set status bar and navigation bar colors
+        // Set status bar color
         val customColor = config.customColor
         if (customColor != null) {
             window.statusBarColor = customColor
-            window.navigationBarColor = customColor
 
-            // Adjust system bar icon colors based on custom color brightness
+            // Adjust status bar icon color based on custom color brightness
             val isLightColor = isColorLight(customColor)
             WindowCompat.getInsetsController(window, window.decorView).apply {
                 isAppearanceLightStatusBars = isLightColor
-                isAppearanceLightNavigationBars = isLightColor
             }
         } else {
             window.statusBarColor = Color.TRANSPARENT
-            window.navigationBarColor = Color.TRANSPARENT
 
-            // Make system bar icons dark for transparent bars
+            // Make status bar icons dark for transparent bar
             WindowCompat.getInsetsController(window, window.decorView).apply {
                 isAppearanceLightStatusBars = true
-                isAppearanceLightNavigationBars = true
             }
         }
     }
@@ -148,7 +144,6 @@ class ChatwootActivity : AppCompatActivity() {
             config.customColor?.let { color ->
                 statusBarSpace.setBackgroundColor(color)
                 toolbar.setBackgroundColor(color)
-                navigationBarSpace.setBackgroundColor(color)
 
                 // Adjust text color based on background brightness
                 val isLightColor = isColorLight(color)
