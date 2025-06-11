@@ -86,6 +86,7 @@ For Android 10 (API level 29) and above, you should also add:
 | `customConnectedIcon`       | `Int`     | Custom drawable resource ID for connected network status    |
 | `customDisconnectedIcon`    | `Int`     | Custom drawable resource ID for disconnected network status |
 | `inboxName`                 | `String`  | Custom inbox name displayed in the app bar                 |
+| `inboxNameFontSize`         | `Float`   | Font size for the inbox name in SP (default: 16f)         |
 | `disableEditor`             | `Boolean` | Disable the message editor (chat becomes read-only)        |
 | `editorDisableUpload`       | `Boolean` | Disable file upload functionality in the editor            |
 
@@ -126,6 +127,7 @@ val config = ChatwootConfiguration(
     customConnectedIcon = R.drawable.ic_custom_online,
     customDisconnectedIcon = R.drawable.ic_custom_offline,
     inboxName = "Customer Support",
+    inboxNameFontSize = 18f, // Larger font size
     disableEditor = false, // Allow messaging
     editorDisableUpload = false // Allow file uploads
 )

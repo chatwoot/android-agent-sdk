@@ -49,51 +49,26 @@
                         android:contentDescription="Back"
                         android:padding="12dp" />
 
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/avatarImage"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="4dp"
-                        app:shapeAppearanceOverlay="@style/CircleImageView"
-                        android:background="@color/avatar_background" />
-
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/inboxName"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
                         android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/profileName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:textColor="@android:color/black"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/inboxName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:textColor="#666666"
-                            android:textSize="12sp"
-                            android:text="Resident Name" />
-
-                    </LinearLayout>
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@android:color/black"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:text="Inbox Name" />
 
                     <ImageView
                         android:id="@+id/networkStatusIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:src="@drawable/ic_network_connected"
                         android:contentDescription="Network Status"
-                        android:padding="2dp" />
+                        android:padding="12dp" />
 
                 </LinearLayout>
 
